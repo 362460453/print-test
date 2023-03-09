@@ -14,29 +14,32 @@ import com.sun.jna.win32.W32APIOptions;
 public class PrintQueue {
 
     public static void main(String[] args) {
-        String printerName = "Microsoft Print to PDF";
+        String printerName = "szprint";
         int jobId = 1;
-
+        //获取打印机句柄
         // Get printer handle
         HANDLEByReference hPrinter = new HANDLEByReference();
         boolean success = Winspool.INSTANCE.OpenPrinter(printerName, hPrinter, null);
         if (!success) {
             throw new RuntimeException("Failed to open printer " + printerName);
         }
-
+        //获取打印机队列信息
         // Get job info
         Pointer pJob = new Memory(1024);
         IntByReference pcbNeeded = new IntByReference();
+        //jobid是作业id，2表示获取作业信息的级别
         success = Winspool.INSTANCE.GetJob(hPrinter.getValue(), jobId, 2, pJob, 1024, pcbNeeded);
         if (!success) {
             throw new RuntimeException("Failed to get job information");
         }
-
+        //处理打印机队列信息，JOB_INFO_2是一个java类用于表示打印机队列信息
         // Process job info
         JOB_INFO_2 jobInfo = new JOB_INFO_2(pJob);
+        //getStatusString是JOB_INFO_2用于获取作业状态的字符串
         System.out.println("Job " + jobId + ": " + jobInfo.getStatusString());
     }
 
+    //定义windows接口
     public static interface Winspool extends StdCallLibrary {
         Winspool INSTANCE = (Winspool) Native.loadLibrary("Winspool.drv", Winspool.class, W32APIOptions.DEFAULT_OPTIONS);
 
